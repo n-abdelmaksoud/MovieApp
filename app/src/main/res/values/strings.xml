@@ -1,0 +1,58 @@
+<resources>
+    <string name="app_name">MovieApp</string>
+
+    <string name="message_offline">No Internet Connection</string>
+
+
+    <string name="menu_main_popular">Popular Movies</string>
+    <string name="menu_main_top_rated">Top Rated Movies</string>
+    <string name="menu_main_favourites">Favourites</string>
+
+    <string name="loading_error">Oops!! Loading Error</string>
+
+    <string name="date_label">Release Date:</string>
+    <string name="rate_label">Rate Average:</string>
+    <string name="overview_label">Overview:</string>
+
+    <string name="overview_placeholder_value">From DC Comics comes the Suicide Squad, an antihero team of incarcerated supervillains who act as deniable assets for the United States government, undertaking high-risk black ops missions in exchange for commuted prison sentences.</string>
+    <string name="toast_error_loading_movie_details">Oops!! Error while loading movie</string>
+    <string name="snackbar_delete_movie_successfully">The movie has been deleted from your Favourites successfully</string>
+    <string name="snackbar_delete_movie_failed">Delete movie from Favourites failed.</string>
+    <string name="snack_bar_add_movie_successfully">The movie added to Favourites. </string>
+    <string name="snack_bar_add_movie_failed">Adding movie to Favourites is failed</string>
+    <string name="empty_favourite_list">Favourite Movies list is empty</string>
+    <string name="trailers">Trailers:</string>
+    <string name="reviews">Reviews:</string>
+
+    <string name="video_thumbnail_url">http://img.youtube.com/vi/%s/hqdefault.jpg</string>
+    <string name="video_url">https://www.youtube.com/watch?v=%s</string>
+
+    <string name="dialog_btn_positive">OK</string>
+    <string name="dialog_title">%s\'s Review:</string>
+
+    <string name="no_reviews">No Reviews</string>
+    <string name="no_video_trailers">No Videos</string>
+
+    <integer-array name="deletedMovies">
+        <item>441614</item>
+        <item>337167</item>
+        <item>315837</item>
+        <item>339964</item>
+        <item>433310</item>
+        <item>431530</item>
+        <item>341013</item>
+        <item>339404</item>
+        <item>637</item>
+        <item>680</item>
+        <item>539</item>
+        <item>19404</item>
+        <item>55960</item>
+        <item>550</item>
+        <item>399055</item>
+        <item>401981</item>
+        <item>141052</item>
+        <item>353486</item>
+        <item>338970</item>
+        <item>353616</item>
+    </integer-array>
+</resources>
