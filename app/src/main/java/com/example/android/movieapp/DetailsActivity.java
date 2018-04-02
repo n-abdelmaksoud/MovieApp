@@ -9,6 +9,7 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
@@ -40,6 +41,8 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import static com.example.android.movieapp.fetchingdata.MovieAPIKey.API_KEY;
+
 /**
  * Created by Little Princess on 2/26/2018.
  */
@@ -47,18 +50,31 @@ import retrofit2.Response;
 public class DetailsActivity extends AppCompatActivity implements ReviewAdapter.ReviewClickListener, VideoTrailersAdapter.VideoTrailersClickListener{
 
 
-    private static final String API_KEY="key";
+    private static final String TAG= DetailsActivity.class.getSimpleName();
+    private static final String BUNDLE_IS_FAVOURITE_MOVIE= "is favourite movie";
+    private static final String VIDEOS_RECYCLER_VIEW_STATE_KEY= "save video recycler view state";
+    private static final String REVIEWS_RECYCLER_VIEW_STATE_KEY= "save reviews recycler view state";
+    private static final String IS_DIALOG_DISPLAYED= "is dialog displayed";
+    private static final String DIALOG_AUTHOR= "dialog title key";
+    private static final String DIALOG_MESSAGE="dialog message";
+    private static final String NESTED_SCROLL_VIEW_STATE = " nestedScrollViewState";
+
     private MovieResponse.MovieModel movie;
     private ActivityDetailsBinding mBinding;
-    private static final String BUNDLE_IS_FAVOURITE_MOVIE= "is favourite movie";
-    private static final String TAG= DetailsActivity.class.getSimpleName();
-    private boolean isFavouriteMovie;
     private MovieService movieService;
     private ReviewAdapter reviewAdapter;
     private VideoTrailersAdapter videoTrailersAdapter;
     private List<Review> reviewList;
     private List<Video> videoList;
     private String posterImageFullPath;
+
+    private Parcelable nestedScrollViewState;
+    private boolean isFavouriteMovie;
+    private Parcelable videoRecyclerViewState;
+    private Parcelable reviewRecyclerViewState;
+    private boolean isDialogDisplayed;
+    private String dialogAuthor;
+    private String dialogMessage;
 
 
     @Override
@@ -71,9 +87,10 @@ public class DetailsActivity extends AppCompatActivity implements ReviewAdapter.
         movie =getMovieObject();
         isFavouriteMovie = getIntent().getBooleanExtra(MainActivity.INTENT_IS_FAVOURITE_MOVIE,false);
 
-        if(savedInstanceState!=null && savedInstanceState.containsKey(BUNDLE_IS_FAVOURITE_MOVIE)){
-            isFavouriteMovie= savedInstanceState.getBoolean(BUNDLE_IS_FAVOURITE_MOVIE);
+        if(savedInstanceState!=null) {
+            restoreActivityMembers(savedInstanceState);
         }
+
         setFavoriteButtonIcon(isFavouriteMovie);
         setFavouriteButtonListener();
         setShareButtonListener();
@@ -98,6 +115,30 @@ public class DetailsActivity extends AppCompatActivity implements ReviewAdapter.
             startLoadingReviews();
         }
 
+    }
+
+    private void restoreActivityMembers(Bundle savedInstanceState) {
+        isFavouriteMovie = savedInstanceState.getBoolean(BUNDLE_IS_FAVOURITE_MOVIE);
+        videoRecyclerViewState= savedInstanceState.getParcelable(VIDEOS_RECYCLER_VIEW_STATE_KEY);
+        reviewRecyclerViewState = savedInstanceState.getParcelable(REVIEWS_RECYCLER_VIEW_STATE_KEY);
+
+
+         /* Restoring ScrollView position code is copied from this link:
+        https://eliasbland.wordpress.com/2011/07/28/how-to-save-the-position-of-a-scrollview-when-the-orientation-changes-in-android/*/
+        final int[] position = savedInstanceState.getIntArray(NESTED_SCROLL_VIEW_STATE);
+        if(position != null)
+            mBinding.nestedScrollView.post(new Runnable() {
+                public void run() {
+                   mBinding.nestedScrollView.scrollTo(position[0], position[1]);
+                }
+            });
+
+        if(savedInstanceState.containsKey(IS_DIALOG_DISPLAYED)){
+            isDialogDisplayed= savedInstanceState. getBoolean(IS_DIALOG_DISPLAYED);
+            dialogMessage= savedInstanceState.getString(DIALOG_MESSAGE);
+            dialogAuthor= savedInstanceState.getString(DIALOG_AUTHOR);
+            displayContentAlertDialog(dialogAuthor,dialogMessage);
+        }
     }
 
     private void setShareButtonListener() {
@@ -228,7 +269,27 @@ public class DetailsActivity extends AppCompatActivity implements ReviewAdapter.
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
+        setRecyclerViewStates();
         outState.putBoolean(BUNDLE_IS_FAVOURITE_MOVIE,isFavouriteMovie);
+        outState.putParcelable(VIDEOS_RECYCLER_VIEW_STATE_KEY,videoRecyclerViewState);
+        outState.putParcelable(REVIEWS_RECYCLER_VIEW_STATE_KEY,reviewRecyclerViewState);
+
+        /* saving ScrollView position code is copied from this link:
+        https://eliasbland.wordpress.com/2011/07/28/how-to-save-the-position-of-a-scrollview-when-the-orientation-changes-in-android/*/
+        outState.putIntArray(NESTED_SCROLL_VIEW_STATE,
+                new int[]{ mBinding.nestedScrollView.getScrollX()
+                        , mBinding.nestedScrollView.getScrollY()});
+
+        if(isDialogDisplayed){
+            outState.putBoolean(IS_DIALOG_DISPLAYED,isDialogDisplayed);
+            outState.putString(DIALOG_AUTHOR,dialogAuthor);
+            outState.putString(DIALOG_MESSAGE, dialogMessage);
+        }
+    }
+
+    private void setRecyclerViewStates() {
+        videoRecyclerViewState= mBinding.rvTrailerVideos.getLayoutManager().onSaveInstanceState();
+        reviewRecyclerViewState= mBinding.rvReviews.getLayoutManager().onSaveInstanceState();
     }
 
     private void displayVideosEmptyView(int resID){
@@ -341,11 +402,17 @@ public class DetailsActivity extends AppCompatActivity implements ReviewAdapter.
     private void populateReviews() {
         reviewAdapter = new ReviewAdapter(this,reviewList);
         mBinding.rvReviews.setAdapter(reviewAdapter);
+        if(reviewRecyclerViewState!=null){
+            mBinding.rvReviews.getLayoutManager().onRestoreInstanceState(reviewRecyclerViewState);
+        }
     }
 
     private void populateVideoTrailers() {
         videoTrailersAdapter= new VideoTrailersAdapter(this, videoList);
         mBinding.rvTrailerVideos.setAdapter(videoTrailersAdapter);
+        if(videoRecyclerViewState!=null){
+            mBinding.rvTrailerVideos.getLayoutManager().onRestoreInstanceState(videoRecyclerViewState);
+        }
     }
 
 
@@ -367,18 +434,28 @@ public class DetailsActivity extends AppCompatActivity implements ReviewAdapter.
     private void displayContentAlertDialog(String author,String content) {
         AlertDialog.Builder builder= new AlertDialog.Builder(this)
                 .setMessage(content)
+                .setCancelable(true)
+                .setTitle(String.format(getString(R.string.dialog_title),author))
                 .setPositiveButton(R.string.dialog_btn_positive, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-                        if(dialogInterface!=null)
+                        if(dialogInterface!=null) {
                             dialogInterface.dismiss();
-                    }
-                }).setCancelable(true)
-                .setTitle(String.format(getString(R.string.dialog_title),author));
+                        }
 
+                    }
+                }).setOnDismissListener(new DialogInterface.OnDismissListener() {
+                    @Override
+                    public void onDismiss(DialogInterface dialogInterface) {
+                        isDialogDisplayed=false;
+                    }
+                });
+
+        dialogAuthor=author;
+        dialogMessage= content;
+        isDialogDisplayed= true;
         AlertDialog dialog= builder.create();
         dialog.show();
-
     }
 
     private void StartVideoTrailersChooserIntent(String key) {

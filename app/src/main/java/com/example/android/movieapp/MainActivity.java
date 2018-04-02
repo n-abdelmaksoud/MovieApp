@@ -14,6 +14,7 @@ import android.os.Parcelable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -35,10 +36,11 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+import static com.example.android.movieapp.fetchingdata.MovieAPIKey.API_KEY;
+
 public class MainActivity extends AppCompatActivity implements MovieAdapter.MovieClickListener, LoaderManager.LoaderCallbacks<Cursor>{
 
     private static final String TAG=MainActivity.class.getSimpleName();
-    private static final String API_KEY="21373ce0af385ce9f981de39a8f5f617";
     private static final String SELECTION = "selection";
     private static final String SELECTION_ARG = "selection args";
     private static final int TOP_RATED_MOVIES=1;
@@ -69,13 +71,28 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
         mBinding.toolbar.setTitle(R.string.app_name);
         setSupportActionBar(mBinding.toolbar);
 
-        GridLayoutManager layoutManager= new GridLayoutManager(this,2);
+        int columnCount=  numberOfColumns();
+
+        GridLayoutManager layoutManager= new GridLayoutManager(this,columnCount);
         mBinding.recyclerView.setLayoutManager(layoutManager);
         mBinding.recyclerView.setHasFixedSize(true);
 
         Log.i(TAG,"onCreate startLoadingSelectedMovies");
         startLoadingSelectedMovies();
 
+    }
+
+    //This method is copied from reviewer suggestion.
+    private int numberOfColumns() {
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+
+        // You can change this divider to adjust the size of the poster
+        int widthDivider =(int) getResources().getDimension(R.dimen.poster_image_width);
+        int width = displayMetrics.widthPixels;
+        int nColumns = width / widthDivider;
+        if (nColumns < 2) return 2; //to keep the grid aspect
+        return nColumns;
     }
 
 
@@ -215,8 +232,10 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
             modifyMovieList(list);
             Log.i(TAG,"modified movieList populateUI . list size = "+list.size());
             adapter= new MovieAdapter(this,list);
-            adapter.notifyDataSetChanged();
             mBinding.recyclerView.setAdapter(adapter);
+            if(recyclerViewState!=null) {
+                mBinding.recyclerView.getLayoutManager().onRestoreInstanceState(recyclerViewState);
+            }
         }
     }
 
@@ -299,11 +318,23 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
     }
 
     @Override
-    protected void onStop() {
-        super.onStop();
-        Log.i(TAG,"onStop save RecyclerView state");
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        if(savedInstanceState!=null && savedInstanceState.containsKey(RECYCLER_VIEW_STATE_KEY)) {
+            Log.i(TAG,"restore recycler view state from onRestoreInstanceState");
+            recyclerViewState=savedInstanceState.getParcelable(RECYCLER_VIEW_STATE_KEY);
+
+        }
+    }
+
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        Log.i(TAG,"save recycler view state from onSaveInstanceState");
         recyclerViewState= mBinding.recyclerView.getLayoutManager().onSaveInstanceState();
-        getIntent().putExtra(RECYCLER_VIEW_STATE_KEY,recyclerViewState);
+        outState.putParcelable(RECYCLER_VIEW_STATE_KEY,recyclerViewState);
+
     }
 
     @Override
