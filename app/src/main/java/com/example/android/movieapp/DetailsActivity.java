@@ -132,7 +132,6 @@ public class DetailsActivity extends AppCompatActivity implements ReviewAdapter.
                    mBinding.nestedScrollView.scrollTo(position[0], position[1]);
                 }
             });
-
         if(savedInstanceState.containsKey(IS_DIALOG_DISPLAYED)){
             isDialogDisplayed= savedInstanceState. getBoolean(IS_DIALOG_DISPLAYED);
             dialogMessage= savedInstanceState.getString(DIALOG_MESSAGE);
@@ -279,7 +278,6 @@ public class DetailsActivity extends AppCompatActivity implements ReviewAdapter.
         outState.putIntArray(NESTED_SCROLL_VIEW_STATE,
                 new int[]{ mBinding.nestedScrollView.getScrollX()
                         , mBinding.nestedScrollView.getScrollY()});
-
         if(isDialogDisplayed){
             outState.putBoolean(IS_DIALOG_DISPLAYED,isDialogDisplayed);
             outState.putString(DIALOG_AUTHOR,dialogAuthor);
@@ -354,7 +352,9 @@ public class DetailsActivity extends AppCompatActivity implements ReviewAdapter.
                     reviewList= response.body().getResults();
                     Log.i(TAG, "reviewList loaded :"+reviewList.size());
                     if(reviewList.size()>0){
+                        mBinding.nestedScrollView.scrollTo(0,0);
                       populateReviews();
+
                     } else {
                         displayReviewsEmptyView(R.string.no_reviews);
                     }
@@ -383,7 +383,9 @@ public class DetailsActivity extends AppCompatActivity implements ReviewAdapter.
                     videoList= response.body().getResults();
                     Log.i(TAG," videoList loaded : "+ videoList.size());
                     if(videoList.size()>0){
+                        mBinding.nestedScrollView.scrollTo(0,0);
                         populateVideoTrailers();
+
                     } else {
                         displayVideosEmptyView(R.string.no_video_trailers);
                     }
