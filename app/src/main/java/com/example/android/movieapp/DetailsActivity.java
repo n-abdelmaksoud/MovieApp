@@ -76,6 +76,8 @@ public class DetailsActivity extends AppCompatActivity implements ReviewAdapter.
     private String dialogAuthor;
     private String dialogMessage;
 
+    int[] nestedScrollViewPosition;
+
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -125,13 +127,13 @@ public class DetailsActivity extends AppCompatActivity implements ReviewAdapter.
 
          /* Restoring ScrollView position code is copied from this link:
         https://eliasbland.wordpress.com/2011/07/28/how-to-save-the-position-of-a-scrollview-when-the-orientation-changes-in-android/*/
-        final int[] position = savedInstanceState.getIntArray(NESTED_SCROLL_VIEW_STATE);
-        if(position != null)
-            mBinding.nestedScrollView.post(new Runnable() {
-                public void run() {
-                   mBinding.nestedScrollView.scrollTo(position[0], position[1]);
-                }
-            });
+       nestedScrollViewPosition = savedInstanceState.getIntArray(NESTED_SCROLL_VIEW_STATE);
+        if(nestedScrollViewPosition != null) {
+            restoreNestedScrollViewPosition();
+        } else {
+            mBinding.nestedScrollView.scrollTo(0,0);
+        }
+
         if(savedInstanceState.containsKey(IS_DIALOG_DISPLAYED)){
             isDialogDisplayed= savedInstanceState. getBoolean(IS_DIALOG_DISPLAYED);
             dialogMessage= savedInstanceState.getString(DIALOG_MESSAGE);
@@ -342,6 +344,14 @@ public class DetailsActivity extends AppCompatActivity implements ReviewAdapter.
         mBinding.rvTrailerVideos.setHasFixedSize(true);
     }
 
+     private void restoreNestedScrollViewPosition() {
+         mBinding.nestedScrollView.post(new Runnable() {
+             public void run() {
+                 mBinding.nestedScrollView.scrollTo(nestedScrollViewPosition[0], nestedScrollViewPosition[1]);
+             }
+         });
+     }
+
     private void startLoadingReviews() {
         Call<ReviewResponse> call = movieService.getMovieReviews(movie.getId(),API_KEY);
         call.enqueue(new Callback<ReviewResponse>() {
@@ -352,8 +362,13 @@ public class DetailsActivity extends AppCompatActivity implements ReviewAdapter.
                     reviewList= response.body().getResults();
                     Log.i(TAG, "reviewList loaded :"+reviewList.size());
                     if(reviewList.size()>0){
-                        mBinding.nestedScrollView.scrollTo(0,0);
-                      populateReviews();
+                        if(nestedScrollViewPosition != null) {
+                            restoreNestedScrollViewPosition();
+                        } else {
+                            mBinding.nestedScrollView.scrollTo(0,0);
+                        }
+
+                        populateReviews();
 
                     } else {
                         displayReviewsEmptyView(R.string.no_reviews);
@@ -383,7 +398,11 @@ public class DetailsActivity extends AppCompatActivity implements ReviewAdapter.
                     videoList= response.body().getResults();
                     Log.i(TAG," videoList loaded : "+ videoList.size());
                     if(videoList.size()>0){
-                        mBinding.nestedScrollView.scrollTo(0,0);
+                        if(nestedScrollViewPosition != null) {
+                            restoreNestedScrollViewPosition();
+                        } else {
+                            mBinding.nestedScrollView.scrollTo(0,0);
+                        }
                         populateVideoTrailers();
 
                     } else {
